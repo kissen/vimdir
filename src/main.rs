@@ -1,12 +1,15 @@
+use std::collections::HashMap;
 use std::env;
 use std::ffi::OsStr;
 use std::fs;
-use std::io::{Error, ErrorKind, Write};
+use std::io::{self, BufRead, Error, ErrorKind, Write};
 use std::path::Path;
 use std::path::PathBuf;
 use std::process;
 use std::vec::Vec;
 use tempdir::TempDir;
+
+type Instructions = HashMap<u64, PathBuf>;
 
 fn argv0() -> String {
     let argv: Vec<String> = env::args().collect();
@@ -19,6 +22,33 @@ fn print_error(what: Error) {
 
 fn err(message: &str) -> Result<(), Error> {
     Err(Error::new(ErrorKind::Other, message))
+}
+
+fn parse_instruction_file_at(txt_file:&PathBuf) -> Result<Instructions, io::Error> {
+    let file = fs::File::open(txt_file)?;
+    let mut instructions: Instructions = HashMap::new();
+
+    for line in io::BufReader::new(file).lines() {
+        let line = line?;
+        let components: Vec<String> = line.splitn(2, "\t").map(String::from).collect();
+
+        if components.len() != 2 {
+            let what: String = format!("bad line{}", line);
+            return Err(Error::new(ErrorKind::Other, what));
+        }
+
+        let idx_string: &String = &components[0];
+        let new_name: &String = &components[1];
+
+        let idx: u64 = match idx_string.parse() {
+            Ok(value) => value,
+            Err(_) => return Err(Error::new(ErrorKind::Other, "bad index"))
+        };
+
+        instructions.insert(idx, PathBuf::from(&new_name));
+    }
+
+    Ok(instructions)
 }
 
 fn run_editor_on(txt_file: &PathBuf) -> Result<process::ExitStatus, Error> {
@@ -66,6 +96,13 @@ fn vimdir() -> Result<(), Error> {
     let exit_code = run_editor_on(&script_path)?.code().unwrap_or(1);
     if exit_code != 0 {
         return err("non-zero exit code");
+    }
+
+    // Load the instructions file.
+    let instructions = parse_instruction_file_at(&script_path)?;
+
+    for (id, name) in &instructions {
+        println!("{}: {:?}", id, name);
     }
 
     Ok(())
