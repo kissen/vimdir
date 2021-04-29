@@ -1,0 +1,8 @@
+[package]
+name = "vimdir"
+version = "0.1.0"
+authors = ["Andreas Schärtl <andreas@schaertl.me>"]
+edition = "2018"
+
+[dependencies]
+tempdir = "0.3.7"
