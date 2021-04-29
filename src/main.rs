@@ -17,6 +17,10 @@ fn print_error(what: Error) {
     eprintln!("{}: error: {}", argv0(), what);
 }
 
+fn err(message: &str) -> Result<(), Error> {
+    Err(Error::new(ErrorKind::Other, message))
+}
+
 fn run_editor_on(txt_file: &PathBuf) -> Result<process::ExitStatus, Error> {
     // Get the EDITOR enviornment variable.
     let editor = env::var("EDITOR");
@@ -57,10 +61,11 @@ fn vimdir() -> Result<(), Error> {
         }
     }
 
-    // Open file in editor, let user edit the file.
+    // Open file in editor, let user edit the file. If the user did not modify
+    // the file, do not continue.
     let exit_code = run_editor_on(&script_path)?.code().unwrap_or(1);
     if exit_code != 0 {
-        return Err(Error::new(ErrorKind::Other, "non-zero exit code from editor"));
+        return err("non-zero exit code");
     }
 
     Ok(())
