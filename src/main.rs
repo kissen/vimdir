@@ -4,6 +4,7 @@ mod keyedbag;
 use anyhow::{bail, Error};
 use keyedbag::KeyedBag;
 use std::env;
+use std::collections::HashSet;
 use std::ffi::OsStr;
 use std::fs;
 use std::io::{self, BufRead, Write};
@@ -111,6 +112,49 @@ fn apply_deletes_from(instructions: &Instructions, old: &DirState) -> Result<usi
     Ok(ndeleted)
 }
 
+fn first_from<T>(set: HashSet<T>) -> Option<T> {
+    for elem in set {
+        return Some(elem);
+    }
+
+    None
+}
+
+fn apply_copies_from(instructions: &Instructions, old: &DirState) -> Result<usize, Error> {
+    let mut ncopied: usize = 0;
+
+    for key in instructions.keys() {
+        let old_file_name = &old[key];
+        let new_file_names = instructions.get(&key).unwrap();
+
+        // If there is no new file name for the given old file, then the
+        // file should be deleted (by another function).
+        if new_file_names.len() == 0 {
+            continue;
+        }
+
+        // If there is exactly one new file name, we can move it instead of
+        // copying it.
+        if new_file_names.len() == 1 {
+            let new_file_name = first_from(new_file_names).unwrap();
+            dirops::mv(&old_file_name, &new_file_name)?;
+            continue;
+        }
+
+        // There are at least two new filenames. We have to copy.
+        for new_file_name in &new_file_names {
+            dirops::copy(&old_file_name, &new_file_name)?;
+            ncopied += 1;
+        }
+
+        if !new_file_names.contains(old_file_name) {
+            dirops::unlink(&old_file_name)?;
+        }
+    }
+
+    Ok(ncopied)
+}
+
 fn vimdir() -> Result<(), Error> {
     let dir = Path::new("/mnt/ramdisk/");
     // Pull a list of all entries in the directory.
@@ -131,6 +175,7 @@ fn vimdir() -> Result<(), Error> {
     // Load the instructions file. Apply them.
     let instructions = parse_instruction_file_at(&script_path)?;
     apply_deletes_from(&instructions, &entries)?;
+    apply_copies_from(&instructions, &entries)?;
 
     Ok(())
 }
