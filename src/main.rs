@@ -11,6 +11,7 @@ use std::io::{self, BufRead, Write};
 use std::path::PathBuf;
 use std::process;
 use std::vec::Vec;
+use structopt::StructOpt;
 use tempdir::TempDir;
 
 type DirState = Vec<PathBuf>;
@@ -158,7 +159,22 @@ fn apply_copies_from(instructions: &Instructions, old: &DirState) -> Result<usiz
     Ok(ncopied)
 }
 
+#[derive(Debug, StructOpt)]
+#[structopt(name = "vimdir")]
+struct Opt {
+    #[structopt(short, long, help = "Also remove directories recursively")]
+    recursive: bool,
+
+    #[structopt(short, long, help = "Display the actions of the program")]
+    verbose: bool,
+
+    #[structopt(name = "FILE", parse(from_os_str), help = "Files to edit")]
+    files: Vec<PathBuf>,
+}
+
 fn vimdir() -> Result<(), Error> {
+    let options = Opt::from_args();
+
     // Pull a list of all entries in the directory.
     let dir = env::current_dir()?;
     let entries: DirState = get_files(&dir)?;
