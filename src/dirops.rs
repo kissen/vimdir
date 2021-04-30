@@ -14,12 +14,15 @@ pub fn is_dir(path: &PathBuf) -> bool {
     }
 }
 
-pub fn unlink(path: &PathBuf) -> Result<(), Error> {
+pub fn unlink(path: &PathBuf, recursive: bool) -> Result<(), Error> {
     let meta = fs::metadata(path)?;
 
     if meta.is_dir() {
         fs::remove_dir_all(path)?
     } else if meta.is_file() {
+        if !recursive {
+            bail!("refusing to unlink: {:?}", path);
+        }
         fs::remove_file(path)?;
     } else {
         bail!("bad file type");

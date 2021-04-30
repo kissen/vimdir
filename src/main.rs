@@ -118,25 +118,25 @@ fn get_files_from_list(paths: &Vec<PathBuf>) -> Result<DirState, Error> {
     Ok(paths.clone())
 }
 
-fn get_files(options: &Opt) -> Result<DirState, Error> {
-    if options.files.is_empty() {
+fn get_files(ops: &Opt) -> Result<DirState, Error> {
+    if ops.files.is_empty() {
         return get_files_from_working_directory();
     }
 
-    if options.files.len() == 1 {
-        let dir = &options.files[0];
+    if ops.files.len() == 1 {
+        let dir = &ops.files[0];
         return get_files_from_directory(dir);
     }
 
-    get_files_from_list(&options.files)
+    get_files_from_list(&ops.files)
 }
 
-fn apply_deletes_from(instructions: &Instructions, old: &DirState) -> Result<usize, Error> {
+fn apply_deletes_from(instr: &Instructions, old: &DirState, ops: &Opt) -> Result<usize, Error> {
     let mut ndeleted: usize = 0;
 
     for (i, filepath) in old.iter().enumerate() {
-        if instructions.get(&i).is_none() {
-            dirops::unlink(filepath)?;
+        if instr.get(&i).is_none() {
+            dirops::unlink(filepath, ops.recursive)?;
             ndeleted += 1;
         }
     }
@@ -152,12 +152,12 @@ fn first_from<T>(set: HashSet<T>) -> Option<T> {
     None
 }
 
-fn apply_copies_from(instructions: &Instructions, old: &DirState) -> Result<usize, Error> {
+fn apply_copies_from(instr: &Instructions, old: &DirState, ops: &Opt) -> Result<usize, Error> {
     let mut ncopied: usize = 0;
 
-    for key in instructions.keys() {
+    for key in instr.keys() {
         let old_file_name = &old[key];
-        let new_file_names = instructions.get(&key).unwrap();
+        let new_file_names = instr.get(&key).unwrap();
 
         // If there is no new file name for the given old file, then the
         // file should be deleted (by another function).
@@ -180,7 +180,7 @@ fn apply_copies_from(instructions: &Instructions, old: &DirState) -> Result<usiz
         }
 
         if !new_file_names.contains(old_file_name) {
-            dirops::unlink(&old_file_name)?;
+            dirops::unlink(&old_file_name, ops.recursive)?;
         }
     }
 
@@ -193,17 +193,14 @@ struct Opt {
     #[structopt(short, long, help = "Also remove directories recursively")]
     recursive: bool,
 
-    #[structopt(short, long, help = "Display the actions of the program")]
-    verbose: bool,
-
     #[structopt(name = "FILE", parse(from_os_str), help = "Files to edit")]
     files: Vec<PathBuf>,
 }
 
 fn vimdir() -> Result<(), Error> {
     // Pull a list of all entries in the directory.
-    let options = Opt::from_args();
-    let entries: DirState = get_files(&options)?;
+    let ops = Opt::from_args();
+    let entries: DirState = get_files(&ops)?;
 
     // Create the temporary directoy and file that is to be edited.
     let script_dir = TempDir::new("vimdir")?;
@@ -216,8 +213,8 @@ fn vimdir() -> Result<(), Error> {
 
     // Load the instructions file. Apply them.
     let instructions = parse_instruction_file_at(&script_path)?;
-    apply_deletes_from(&instructions, &entries)?;
-    apply_copies_from(&instructions, &entries)?;
+    apply_deletes_from(&instructions, &entries, &ops)?;
+    apply_copies_from(&instructions, &entries, &ops)?;
 
     Ok(())
 }
