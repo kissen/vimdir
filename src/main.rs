@@ -25,7 +25,7 @@ fn argv0() -> String {
     return argv.first().unwrap().clone();
 }
 
-fn print_error(what: Error) {
+fn print_error(what: &Error) {
     eprintln!("{}: error: {}", argv0(), what);
 }
 
@@ -118,17 +118,6 @@ fn vimdir() -> Result<(), Error> {
     Ok(())
 }
 
-fn main() {
-    let result = vimdir();
-
-    if !result.is_ok() {
-        print_error(result.err().unwrap());
-        process::exit(1);
-    }
-
-    println!("ok");
-}
-
 fn get_files(dir: &Path) -> Result<Vec<PathBuf>, Error> {
     let mut result: Vec<PathBuf> = Vec::new();
 
@@ -140,4 +129,11 @@ fn get_files(dir: &Path) -> Result<Vec<PathBuf>, Error> {
     let tx: KeyedBag<i64, i64> = KeyedBag::new();
 
     Ok(result)
+}
+
+fn main() {
+    if let Err(what) = vimdir() {
+        print_error(&what);
+        process::exit(1);
+    }
 }
