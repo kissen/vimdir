@@ -15,7 +15,14 @@ As of now, it might just randomly delete your $HOME. Run at your own
 risk. It is also the first real Rust program I have written. So if I
 am not using idiomatic Rust, feel free to correct me.
 
+Documentation
+-------------
+
+The `/doc` directory contains some documentation. It uses markdown as
+interpreted by `ronn(1)` [2].
+
 References
 ----------
 
 [1] https://github.com/madx/moreutils
+[2] https://rtomayko.github.io/ronn/
