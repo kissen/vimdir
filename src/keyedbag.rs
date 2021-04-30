@@ -1,15 +1,14 @@
 use std::clone::Clone;
 use std::cmp::Eq;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
-use std::vec::Vec;
 use std::option::Option;
 
-pub struct KeyedBag<K: Eq + Hash + Clone, V: Eq + Clone> {
-    map: HashMap<K, Vec<V>>,
+pub struct KeyedBag<K: Eq + Hash + Clone, V: Eq + Hash + Clone> {
+    map: HashMap<K, HashSet<V>>,
 }
 
-impl<K: Eq + Hash + Clone, V: Eq + Clone> KeyedBag<K, V> {
+impl<K: Eq + Hash + Clone, V: Eq + Hash + Clone> KeyedBag<K, V> {
     pub fn new() -> KeyedBag<K, V> {
         KeyedBag {
             map: HashMap::new(),
@@ -19,17 +18,14 @@ impl<K: Eq + Hash + Clone, V: Eq + Clone> KeyedBag<K, V> {
     pub fn insert(&mut self, key: &K, value: &V) {
         let key = key.clone();
         let value = value.clone();
-        self.map.entry(key).or_default().push(value);
+        self.map.entry(key).or_default().insert(value);
     }
 
-    pub fn get(&self, key: &K) -> Option<Vec<V>> {
-        match self.map.get(key) {
-            Some(items) => Some(items.clone()),
-            None => None
-        }
+    pub fn get(&self, key: &K) -> Option<HashSet<V>> {
+        Some(self.map.get(key)?.clone())
     }
 
-    pub fn keys(&self) -> Vec<K> {
+    pub fn keys(&self) -> HashSet<K> {
         self.map.keys().map(|e| e.clone()).collect()
     }
 }
