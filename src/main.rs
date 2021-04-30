@@ -81,38 +81,11 @@ fn run_editor_on(txt_file: &PathBuf) -> Result<process::ExitStatus, Error> {
     Ok(status)
 }
 
-fn vimdir() -> Result<(), Error> {
-    let dir = Path::new("/mnt/ramdisk/");
-    // Pull a list of all entries in the directory.
-    let entries = get_files(dir)?;
+fn create_instructions_file_at(script_path: &PathBuf, entries: &Vec<PathBuf>) -> Result<(), Error> {
+    let mut script_file = fs::File::create(&script_path)?;
 
-    // Create the temporary directoy and file that is to be edited.
-    let script_dir = TempDir::new("vimdir")?;
-    let script_path = script_dir.path().join("instructions.txt");
-
-    {
-        // Create the instructions file. We do this in an extra scope so
-        // the file gets closed once we left this block, i.e. it is ready
-        // for editing by the user.
-        let mut script_file = fs::File::create(&script_path)?;
-
-        for (i, filename) in entries.iter().enumerate() {
-            writeln!(script_file, "{}\t{}", i, filename.display())?;
-        }
-    }
-
-    // Open file in editor, let user edit the file. If the user did not modify
-    // the file, do not continue.
-    let exit_code = run_editor_on(&script_path)?.code().unwrap_or(1);
-    if exit_code != 0 {
-        bail!("non-zero exit code");
-    }
-
-    // Load the instructions file.
-    let instructions = parse_instruction_file_at(&script_path)?;
-
-    for (id, name) in &instructions {
-        println!("{}: {:?}", id, name);
+    for (i, filename) in entries.iter().enumerate() {
+        writeln!(script_file, "{}\t{}", i, filename.display())?;
     }
 
     Ok(())
@@ -129,6 +102,33 @@ fn get_files(dir: &Path) -> Result<Vec<PathBuf>, Error> {
     let tx: KeyedBag<i64, i64> = KeyedBag::new();
 
     Ok(result)
+}
+
+fn vimdir() -> Result<(), Error> {
+    let dir = Path::new("/mnt/ramdisk/");
+    // Pull a list of all entries in the directory.
+    let entries = get_files(dir)?;
+
+    // Create the temporary directoy and file that is to be edited.
+    let script_dir = TempDir::new("vimdir")?;
+    let script_path = script_dir.path().join("instructions.txt");
+    create_instructions_file_at(&script_path, &entries)?;
+
+    // Open file in editor, let user edit the file. If the user did not modify
+    // the file, do not continue.
+    let exit_code = run_editor_on(&script_path)?.code().unwrap_or(1);
+    if exit_code != 0 {
+        bail!("non-zero exit code");
+    }
+
+    // Load the instructions file.
+    let instructions = parse_instruction_file_at(&script_path)?;
+
+    for (id, name) in &instructions {
+        println!("{}: {:?}", id, name);
+    }
+
+    Ok(())
 }
 
 fn main() {
