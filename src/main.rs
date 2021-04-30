@@ -1,13 +1,22 @@
+mod keyedbag;
+
+use anyhow::{bail, Error};
+use keyedbag::KeyedBag;
 use std::collections::HashMap;
 use std::env;
 use std::ffi::OsStr;
 use std::fs;
-use std::io::{self, BufRead, Error, ErrorKind, Write};
+use std::io::{self, BufRead, Write};
 use std::path::Path;
 use std::path::PathBuf;
 use std::process;
 use std::vec::Vec;
 use tempdir::TempDir;
+
+// NEXT UP
+// - parse_instruction_file_at anpassen! Derzeit kann jede ID (u64)
+//   nur einmal vorkommen. Das wollen wir aber gerade nicht! Wir
+//   wollen beliebige Kopien machen können!
 
 type Instructions = HashMap<u64, PathBuf>;
 
@@ -20,11 +29,7 @@ fn print_error(what: Error) {
     eprintln!("{}: error: {}", argv0(), what);
 }
 
-fn err(message: &str) -> Result<(), Error> {
-    Err(Error::new(ErrorKind::Other, message))
-}
-
-fn parse_instruction_file_at(txt_file:&PathBuf) -> Result<Instructions, io::Error> {
+fn parse_instruction_file_at(txt_file: &PathBuf) -> Result<Instructions, Error> {
     let file = fs::File::open(txt_file)?;
     let mut instructions: Instructions = HashMap::new();
 
@@ -33,8 +38,7 @@ fn parse_instruction_file_at(txt_file:&PathBuf) -> Result<Instructions, io::Erro
         let components: Vec<String> = line.splitn(2, "\t").map(String::from).collect();
 
         if components.len() != 2 {
-            let what: String = format!("bad line{}", line);
-            return Err(Error::new(ErrorKind::Other, what));
+            bail!("bad line: {}", line);
         }
 
         let idx_string: &String = &components[0];
@@ -42,7 +46,7 @@ fn parse_instruction_file_at(txt_file:&PathBuf) -> Result<Instructions, io::Erro
 
         let idx: u64 = match idx_string.parse() {
             Ok(value) => value,
-            Err(_) => return Err(Error::new(ErrorKind::Other, "bad index"))
+            Err(_) => bail!("bad index"),
         };
 
         instructions.insert(idx, PathBuf::from(&new_name));
@@ -55,7 +59,7 @@ fn run_editor_on(txt_file: &PathBuf) -> Result<process::ExitStatus, Error> {
     // Get the EDITOR enviornment variable.
     let editor = env::var("EDITOR");
     if !editor.is_ok() {
-        return Err(Error::new(ErrorKind::NotFound, "environment variable EDITOR not set"))
+        bail!("environment variable EDITOR not set");
     };
 
     // EDITOR can be many things, e.g.
@@ -68,7 +72,13 @@ fn run_editor_on(txt_file: &PathBuf) -> Result<process::ExitStatus, Error> {
     let executable = OsStr::new(&executable);
 
     // Finally we can execute the command.
-    process::Command::new(executable).args(&components[1..]).arg(txt_file).spawn()?.wait()
+    let status = process::Command::new(executable)
+        .args(&components[1..])
+        .arg(txt_file)
+        .spawn()?
+        .wait()?;
+
+    Ok(status)
 }
 
 fn vimdir() -> Result<(), Error> {
@@ -95,7 +105,7 @@ fn vimdir() -> Result<(), Error> {
     // the file, do not continue.
     let exit_code = run_editor_on(&script_path)?.code().unwrap_or(1);
     if exit_code != 0 {
-        return err("non-zero exit code");
+        bail!("non-zero exit code");
     }
 
     // Load the instructions file.
@@ -126,6 +136,8 @@ fn get_files(dir: &Path) -> Result<Vec<PathBuf>, Error> {
         let entry = entry?;
         result.push(entry.path())
     }
+
+    let tx: KeyedBag<i64, i64> = KeyedBag::new();
 
     Ok(result)
 }
