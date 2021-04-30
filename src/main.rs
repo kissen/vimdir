@@ -8,7 +8,6 @@ use std::env;
 use std::ffi::OsStr;
 use std::fs;
 use std::io::{self, BufRead, Write};
-use std::path::Path;
 use std::path::PathBuf;
 use std::process;
 use std::vec::Vec;
@@ -92,7 +91,7 @@ fn create_instructions_file_at(script_path: &PathBuf, entries: &DirState) -> Res
     Ok(())
 }
 
-fn get_files(dir: &Path) -> Result<DirState, Error> {
+fn get_files(dir: &PathBuf) -> Result<DirState, Error> {
     let mut result: Vec<PathBuf> = Vec::new();
 
     for entry in fs::read_dir(dir)? {
@@ -160,9 +159,9 @@ fn apply_copies_from(instructions: &Instructions, old: &DirState) -> Result<usiz
 }
 
 fn vimdir() -> Result<(), Error> {
-    let dir = Path::new("/mnt/ramdisk/");
     // Pull a list of all entries in the directory.
-    let entries: DirState = get_files(dir)?;
+    let dir = env::current_dir()?;
+    let entries: DirState = get_files(&dir)?;
 
     // Create the temporary directoy and file that is to be edited.
     let script_dir = TempDir::new("vimdir")?;
