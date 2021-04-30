@@ -1,3 +1,4 @@
+mod dirops;
 mod keyedbag;
 
 use anyhow::{bail, Error};
@@ -12,7 +13,8 @@ use std::process;
 use std::vec::Vec;
 use tempdir::TempDir;
 
-type Instructions = KeyedBag<u64, PathBuf>;
+type DirState = Vec<PathBuf>;
+type Instructions = KeyedBag<usize, PathBuf>;
 
 fn argv0() -> String {
     let argv: Vec<String> = env::args().collect();
@@ -38,7 +40,7 @@ fn parse_instruction_file_at(txt_file: &PathBuf) -> Result<Instructions, Error> 
         let idx_string: &String = &components[0];
         let new_name: &String = &components[1];
 
-        let idx: u64 = match idx_string.parse() {
+        let idx: usize = match idx_string.parse() {
             Ok(value) => value,
             Err(_) => bail!("bad index: {}", idx_string),
         };
@@ -75,7 +77,7 @@ fn run_editor_on(txt_file: &PathBuf) -> Result<process::ExitStatus, Error> {
     Ok(status)
 }
 
-fn create_instructions_file_at(script_path: &PathBuf, entries: &Vec<PathBuf>) -> Result<(), Error> {
+fn create_instructions_file_at(script_path: &PathBuf, entries: &DirState) -> Result<(), Error> {
     let mut script_file = fs::File::create(&script_path)?;
 
     for (i, filename) in entries.iter().enumerate() {
@@ -85,7 +87,7 @@ fn create_instructions_file_at(script_path: &PathBuf, entries: &Vec<PathBuf>) ->
     Ok(())
 }
 
-fn get_files(dir: &Path) -> Result<Vec<PathBuf>, Error> {
+fn get_files(dir: &Path) -> Result<DirState, Error> {
     let mut result: Vec<PathBuf> = Vec::new();
 
     for entry in fs::read_dir(dir)? {
@@ -96,10 +98,23 @@ fn get_files(dir: &Path) -> Result<Vec<PathBuf>, Error> {
     Ok(result)
 }
 
+fn apply_deletes_from(instructions: &Instructions, old: &DirState) -> Result<usize, Error> {
+    let mut ndeleted: usize = 0;
+
+    for (i, filepath) in old.iter().enumerate() {
+        if instructions.get(&i).is_none() {
+            dirops::unlink(filepath)?;
+            ndeleted += 1;
+        }
+    }
+
+    Ok(ndeleted)
+}
+
 fn vimdir() -> Result<(), Error> {
     let dir = Path::new("/mnt/ramdisk/");
     // Pull a list of all entries in the directory.
-    let entries = get_files(dir)?;
+    let entries: DirState = get_files(dir)?;
 
     // Create the temporary directoy and file that is to be edited.
     let script_dir = TempDir::new("vimdir")?;
@@ -113,12 +128,9 @@ fn vimdir() -> Result<(), Error> {
         bail!("non-zero exit code: {}", exit_code);
     }
 
-    // Load the instructions file.
+    // Load the instructions file. Apply them.
     let instructions = parse_instruction_file_at(&script_path)?;
-
-    for key in instructions.keys() {
-        println!("key={} values={:?}", key, instructions.get(&key).unwrap());
-    }
+    apply_deletes_from(&instructions, &entries)?;
 
     Ok(())
 }
