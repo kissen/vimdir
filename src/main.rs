@@ -3,8 +3,8 @@ mod keyedbag;
 
 use anyhow::{bail, Error};
 use keyedbag::KeyedBag;
-use std::env;
 use std::collections::HashSet;
+use std::env;
 use std::ffi::OsStr;
 use std::fs;
 use std::io::{self, BufRead, Write};
@@ -52,7 +52,7 @@ fn parse_instruction_file_at(txt_file: &PathBuf) -> Result<Instructions, Error> 
     Ok(instructions)
 }
 
-fn run_editor_on(txt_file: &PathBuf) -> Result<process::ExitStatus, Error> {
+fn run_editor_on(txt_file: &PathBuf) -> Result<(), Error> {
     // Get the EDITOR enviornment variable.
     let editor = env::var("EDITOR");
     if !editor.is_ok() {
@@ -75,7 +75,11 @@ fn run_editor_on(txt_file: &PathBuf) -> Result<process::ExitStatus, Error> {
         .spawn()?
         .wait()?;
 
-    Ok(status)
+    return match status.code() {
+        Some(0) => Ok(()),
+        Some(code) => bail!("EDITOR quit with non-zero exit code: {}", code),
+        None => bail!("failed to run EDITOR"),
+    };
 }
 
 fn create_instructions_file_at(script_path: &PathBuf, entries: &DirState) -> Result<(), Error> {
@@ -167,10 +171,7 @@ fn vimdir() -> Result<(), Error> {
 
     // Open file in editor, let user edit the file. If the user did not modify
     // the file, do not continue.
-    let exit_code = run_editor_on(&script_path)?.code().unwrap_or(1);
-    if exit_code != 0 {
-        bail!("non-zero exit code: {}", exit_code);
-    }
+    run_editor_on(&script_path)?;
 
     // Load the instructions file. Apply them.
     let instructions = parse_instruction_file_at(&script_path)?;

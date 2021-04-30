@@ -1,6 +1,6 @@
 use anyhow::{bail, Error};
-use std::fs;
 use fs_extra;
+use std::fs;
 use std::path::PathBuf;
 
 pub fn unlink(path: &PathBuf) -> Result<(), Error> {
@@ -22,7 +22,7 @@ pub fn copy(from: &PathBuf, to: &PathBuf) -> Result<(), Error> {
     // can return w/o any io operations.
 
     if from == to {
-        return Ok(())
+        return Ok(());
     }
 
     // Paths from and to are actually different. We will need to do
@@ -45,7 +45,7 @@ pub fn copy(from: &PathBuf, to: &PathBuf) -> Result<(), Error> {
 
 pub fn mv(from: &PathBuf, to: &PathBuf) -> Result<(), Error> {
     if from == to {
-        return Ok(())
+        return Ok(());
     }
 
     let meta = fs::metadata(from)?;
