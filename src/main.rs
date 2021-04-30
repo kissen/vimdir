@@ -2,7 +2,6 @@ mod keyedbag;
 
 use anyhow::{bail, Error};
 use keyedbag::KeyedBag;
-use std::collections::HashMap;
 use std::env;
 use std::ffi::OsStr;
 use std::fs;
@@ -13,12 +12,7 @@ use std::process;
 use std::vec::Vec;
 use tempdir::TempDir;
 
-// NEXT UP
-// - parse_instruction_file_at anpassen! Derzeit kann jede ID (u64)
-//   nur einmal vorkommen. Das wollen wir aber gerade nicht! Wir
-//   wollen beliebige Kopien machen können!
-
-type Instructions = HashMap<u64, PathBuf>;
+type Instructions = KeyedBag<u64, PathBuf>;
 
 fn argv0() -> String {
     let argv: Vec<String> = env::args().collect();
@@ -31,7 +25,7 @@ fn print_error(what: &Error) {
 
 fn parse_instruction_file_at(txt_file: &PathBuf) -> Result<Instructions, Error> {
     let file = fs::File::open(txt_file)?;
-    let mut instructions: Instructions = HashMap::new();
+    let mut instructions: Instructions = KeyedBag::new();
 
     for line in io::BufReader::new(file).lines() {
         let line = line?;
@@ -46,10 +40,10 @@ fn parse_instruction_file_at(txt_file: &PathBuf) -> Result<Instructions, Error> 
 
         let idx: u64 = match idx_string.parse() {
             Ok(value) => value,
-            Err(_) => bail!("bad index"),
+            Err(_) => bail!("bad index: {}", idx_string),
         };
 
-        instructions.insert(idx, PathBuf::from(&new_name));
+        instructions.insert(&idx, &PathBuf::from(&new_name));
     }
 
     Ok(instructions)
@@ -99,8 +93,6 @@ fn get_files(dir: &Path) -> Result<Vec<PathBuf>, Error> {
         result.push(entry.path())
     }
 
-    let tx: KeyedBag<i64, i64> = KeyedBag::new();
-
     Ok(result)
 }
 
@@ -118,14 +110,14 @@ fn vimdir() -> Result<(), Error> {
     // the file, do not continue.
     let exit_code = run_editor_on(&script_path)?.code().unwrap_or(1);
     if exit_code != 0 {
-        bail!("non-zero exit code");
+        bail!("non-zero exit code: {}", exit_code);
     }
 
     // Load the instructions file.
     let instructions = parse_instruction_file_at(&script_path)?;
 
-    for (id, name) in &instructions {
-        println!("{}: {:?}", id, name);
+    for key in instructions.keys() {
+        println!("key={} values={:?}", key, instructions.get(&key).unwrap());
     }
 
     Ok(())
