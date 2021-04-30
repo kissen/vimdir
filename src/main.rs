@@ -92,8 +92,13 @@ fn create_instructions_file_at(script_path: &PathBuf, entries: &DirState) -> Res
     Ok(())
 }
 
-fn get_files(dir: &PathBuf) -> Result<DirState, Error> {
-    let mut result: Vec<PathBuf> = Vec::new();
+fn get_files_from_working_directory() -> Result<DirState, Error> {
+    let dir = env::current_dir()?;
+    get_files_from_directory(&dir)
+}
+
+fn get_files_from_directory(dir: &PathBuf) -> Result<DirState, Error> {
+    let mut result: DirState = Vec::new();
 
     for entry in fs::read_dir(dir)? {
         let entry = entry?;
@@ -101,6 +106,29 @@ fn get_files(dir: &PathBuf) -> Result<DirState, Error> {
     }
 
     Ok(result)
+}
+
+fn get_files_from_list(paths: &Vec<PathBuf>) -> Result<DirState, Error> {
+    for path in paths.iter() {
+        if !dirops::exists(path) {
+            bail!("path does not exist: {:?}", path);
+        }
+    }
+
+    Ok(paths.clone())
+}
+
+fn get_files(options: &Opt) -> Result<DirState, Error> {
+    if options.files.is_empty() {
+        return get_files_from_working_directory();
+    }
+
+    if options.files.len() == 1 {
+        let dir = &options.files[0];
+        return get_files_from_directory(dir);
+    }
+
+    get_files_from_list(&options.files)
 }
 
 fn apply_deletes_from(instructions: &Instructions, old: &DirState) -> Result<usize, Error> {
@@ -173,11 +201,9 @@ struct Opt {
 }
 
 fn vimdir() -> Result<(), Error> {
-    let options = Opt::from_args();
-
     // Pull a list of all entries in the directory.
-    let dir = env::current_dir()?;
-    let entries: DirState = get_files(&dir)?;
+    let options = Opt::from_args();
+    let entries: DirState = get_files(&options)?;
 
     // Create the temporary directoy and file that is to be edited.
     let script_dir = TempDir::new("vimdir")?;

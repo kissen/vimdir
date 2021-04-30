@@ -3,6 +3,17 @@ use fs_extra;
 use std::fs;
 use std::path::PathBuf;
 
+pub fn exists(path: &PathBuf) -> bool {
+    fs::metadata(path).is_ok()
+}
+
+pub fn is_dir(path: &PathBuf) -> bool {
+    match fs::metadata(path) {
+        Ok(meta) => meta.is_dir(),
+        Err(_) => false,
+    }
+}
+
 pub fn unlink(path: &PathBuf) -> Result<(), Error> {
     let meta = fs::metadata(path)?;
 
