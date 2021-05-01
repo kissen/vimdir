@@ -3,10 +3,12 @@ use fs_extra;
 use std::fs;
 use std::path::PathBuf;
 
+/// Return whether file at path exists.
 pub fn exists(path: &PathBuf) -> bool {
     fs::metadata(path).is_ok()
 }
 
+/// Return whether path represents an existing directory.
 pub fn is_dir(path: &PathBuf) -> bool {
     match fs::metadata(path) {
         Ok(meta) => meta.is_dir(),
@@ -14,6 +16,8 @@ pub fn is_dir(path: &PathBuf) -> bool {
     }
 }
 
+/// Delete file at path. If path is a directory, it is only deleted
+/// when recursive is set to true.
 pub fn unlink(path: &PathBuf, recursive: bool) -> Result<(), Error> {
     let meta = fs::metadata(path)?;
 
@@ -31,6 +35,7 @@ pub fn unlink(path: &PathBuf, recursive: bool) -> Result<(), Error> {
     Ok(())
 }
 
+/// Copy file or directory from -> to.
 pub fn copy(from: &PathBuf, to: &PathBuf) -> Result<(), Error> {
     // When from and to are the same, there is nothing to do. We
     // can return w/o any io operations.
@@ -57,6 +62,7 @@ pub fn copy(from: &PathBuf, to: &PathBuf) -> Result<(), Error> {
     Ok(())
 }
 
+/// Move file or directory from -> to.
 pub fn mv(from: &PathBuf, to: &PathBuf) -> Result<(), Error> {
     if from == to {
         return Ok(());
