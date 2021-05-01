@@ -4,6 +4,8 @@ use std::fs::{self, OpenOptions};
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::PathBuf;
 
+/// Return parent path. Throws an error if the path could not
+/// be determined.
 pub fn parent(path: &PathBuf) -> Result<PathBuf, Error> {
     match path.parent() {
         Some(parent_path) => Ok(parent_path.to_path_buf()),
@@ -11,6 +13,8 @@ pub fn parent(path: &PathBuf) -> Result<PathBuf, Error> {
     }
 }
 
+/// Create a new file at "path" restricted such that only the current
+/// user can read and write the file.
 pub fn open_for_user(path: &PathBuf) -> Result<fs::File, Error> {
     let mut options = OpenOptions::new();
     options.create(true);

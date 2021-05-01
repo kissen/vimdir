@@ -103,6 +103,7 @@ fn create_instructions_file_at(path: &PathBuf, state: &DirState) -> Result<(), E
     Ok(())
 }
 
+/// Check whether "path" actually exists. If it does not, throw an error.
 fn ensure_paths_exists(path: &PathBuf) -> Result<(), Error> {
     if !path.exists() {
         bail!("path does not exist: {:?}", path);
@@ -111,6 +112,8 @@ fn ensure_paths_exists(path: &PathBuf) -> Result<(), Error> {
     Ok(())
 }
 
+/// Check whether "path" has "expected_parent" as parent. Throw an error
+/// if it does not.
 fn ensure_parent_matches(path: &PathBuf, expected_parent: &PathBuf) -> Result<(), Error> {
     let path_parent = dirops::parent(path)?;
 
@@ -120,8 +123,6 @@ fn ensure_parent_matches(path: &PathBuf, expected_parent: &PathBuf) -> Result<()
 
     Ok(())
 }
-
-
 
 /// Get a file listing from the current working directory.
 fn get_files_from_working_directory() -> Result<DirState, Error> {
