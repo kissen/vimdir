@@ -14,7 +14,11 @@ use std::vec::Vec;
 use structopt::StructOpt;
 use tempdir::TempDir;
 
-type DirState = Vec<PathBuf>;
+struct DirState {
+    entries: Vec<PathBuf>,
+    parent: PathBuf,
+}
+
 type Instructions = KeyedBag<usize, PathBuf>;
 
 /// Return the first arg as passed to the program. Usually,
@@ -87,34 +91,16 @@ fn run_editor_on(txt_file: &PathBuf) -> Result<(), Error> {
     };
 }
 
-/// Create the template instruction file, containing "entries". The
+/// Create the template instruction file, containing "state.entries". The
 /// file will be written to "path".
-fn create_instructions_file_at(path: &PathBuf, entries: &DirState) -> Result<(), Error> {
+fn create_instructions_file_at(path: &PathBuf, state: &DirState) -> Result<(), Error> {
     let mut file = dirops::open_for_user(path)?;
 
-    for (i, filename) in entries.iter().enumerate() {
+    for (i, filename) in state.entries.iter().enumerate() {
         writeln!(file, "{}\t{}", i, filename.display())?;
     }
 
     Ok(())
-}
-
-/// Get a file listing from the current working directory.
-fn get_files_from_working_directory() -> Result<DirState, Error> {
-    let dir = env::current_dir()?;
-    get_files_from_directory(&dir)
-}
-
-/// Get a file listing from directory "dir".
-fn get_files_from_directory(dir: &PathBuf) -> Result<DirState, Error> {
-    let mut result: DirState = Vec::new();
-
-    for entry in fs::read_dir(dir)? {
-        let entry = entry?;
-        result.push(entry.path())
-    }
-
-    Ok(result)
 }
 
 fn ensure_paths_exists(path: &PathBuf) -> Result<(), Error> {
@@ -126,16 +112,38 @@ fn ensure_paths_exists(path: &PathBuf) -> Result<(), Error> {
 }
 
 fn ensure_parent_matches(path: &PathBuf, expected_parent: &PathBuf) -> Result<(), Error> {
-    let path_parent = match path.parent() {
-        Some(parent) => parent,
-        None => bail!("path has no parent: {:?}", path),
-    };
+    let path_parent = dirops::parent(path)?;
 
-    if path_parent != expected_parent {
+    if &path_parent != expected_parent {
         bail!("directories not unique: {:?} and {:?}", expected_parent, path_parent);
     }
 
     Ok(())
+}
+
+
+
+/// Get a file listing from the current working directory.
+fn get_files_from_working_directory() -> Result<DirState, Error> {
+    let dir = env::current_dir()?;
+    get_files_from_directory(&dir)
+}
+
+/// Get a file listing from directory "dir".
+fn get_files_from_directory(dir: &PathBuf) -> Result<DirState, Error> {
+    let mut result: Vec<PathBuf> = Vec::new();
+
+    for entry in fs::read_dir(dir)? {
+        let entry = entry?;
+        result.push(entry.path())
+    }
+
+    let state = DirState {
+        entries: result,
+        parent: dir.clone(),
+    };
+
+    Ok(state)
 }
 
 /// Get a file listing containing each element in "paths". This function
@@ -148,17 +156,19 @@ fn get_files_from_list(paths: &Vec<PathBuf>) -> Result<DirState, Error> {
         bail!("no paths supplied");
     }
 
-    let expected_parent = match paths.first().unwrap().parent() {
-        Some(path) => path.to_path_buf(),
-        None => bail!("path without parent"),
-    };
+    let expected_parent = dirops::parent(paths.first().unwrap())?;
 
     for path in paths.iter() {
         ensure_paths_exists(&path)?;
         ensure_parent_matches(&path, &expected_parent)?;
     }
 
-    Ok(paths.clone())
+    let state = DirState {
+        entries: paths.clone(),
+        parent: expected_parent,
+    };
+
+    Ok(state)
 }
 
 /// Get the listing of files and directories to edit.
@@ -180,7 +190,7 @@ fn get_files(ops: &Opt) -> Result<DirState, Error> {
 fn apply_deletes_from(instr: &Instructions, old: &DirState, ops: &Opt) -> Result<usize, Error> {
     let mut ndeleted: usize = 0;
 
-    for (i, filepath) in old.iter().enumerate() {
+    for (i, filepath) in old.entries.iter().enumerate() {
         if instr.get(&i).is_none() {
             dirops::unlink(filepath, ops.recursive)?;
             ndeleted += 1;
@@ -207,7 +217,7 @@ fn apply_copies_from(instr: &Instructions, old: &DirState, ops: &Opt) -> Result<
     let mut ncopied: usize = 0;
 
     for key in instr.keys() {
-        let old_file_name = &old[key];
+        let old_file_name = &old.entries[key];
         let new_file_names = instr.get(&key).unwrap();
 
         // If there is no new file name for the given old file, then the

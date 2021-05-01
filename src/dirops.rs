@@ -4,6 +4,13 @@ use std::fs::{self, OpenOptions};
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::PathBuf;
 
+pub fn parent(path: &PathBuf) -> Result<PathBuf, Error> {
+    match path.parent() {
+        Some(parent_path) => Ok(parent_path.to_path_buf()),
+        None => bail!("no parent: {:?}", path),
+    }
+}
+
 pub fn open_for_user(path: &PathBuf) -> Result<fs::File, Error> {
     let mut options = OpenOptions::new();
     options.create(true);
