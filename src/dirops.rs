@@ -3,19 +3,6 @@ use fs_extra;
 use std::fs;
 use std::path::PathBuf;
 
-/// Return whether file at path exists.
-pub fn exists(path: &PathBuf) -> bool {
-    fs::metadata(path).is_ok()
-}
-
-/// Return whether path represents an existing directory.
-pub fn is_dir(path: &PathBuf) -> bool {
-    match fs::metadata(path) {
-        Ok(meta) => meta.is_dir(),
-        Err(_) => false,
-    }
-}
-
 /// Delete file at path. If path is a directory, it is only deleted
 /// when recursive is set to true.
 pub fn unlink(path: &PathBuf, recursive: bool) -> Result<(), Error> {

@@ -121,7 +121,7 @@ fn get_files_from_directory(dir: &PathBuf) -> Result<DirState, Error> {
 /// fails when any of the elements in "paths" do not exist.
 fn get_files_from_list(paths: &Vec<PathBuf>) -> Result<DirState, Error> {
     for path in paths.iter() {
-        if !dirops::exists(path) {
+        if !path.exists() {
             bail!("path does not exist: {:?}", path);
         }
     }
