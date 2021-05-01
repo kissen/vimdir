@@ -14,12 +14,25 @@ use std::vec::Vec;
 use structopt::StructOpt;
 use tempdir::TempDir;
 
+type Instructions = KeyedBag<usize, PathBuf>;
+
 struct DirState {
     entries: Vec<PathBuf>,
     parent: PathBuf,
 }
 
-type Instructions = KeyedBag<usize, PathBuf>;
+#[derive(Debug, StructOpt)]
+#[structopt(name = "vimdir")]
+struct Opt {
+    #[structopt(short, long, help = "Also remove directories recursively")]
+    recursive: bool,
+
+    #[structopt(short, long, help = "Verbosely display the actions taken by the program")]
+    verbose: bool,
+
+    #[structopt(name = "FILE", parse(from_os_str), help = "Files to edit")]
+    files: Vec<PathBuf>,
+}
 
 /// Return the first arg as passed to the program. Usually,
 /// this is the name of the executable.
@@ -34,7 +47,7 @@ fn print_error(what: &Error) {
 }
 
 /// Read instruction file at "txt_file" and return the individual items.
-fn parse_instruction_file_at(txt_file: &PathBuf) -> Result<Instructions, Error> {
+fn parse_instruction_file_at(txt_file: &PathBuf, state: &DirState) -> Result<Instructions, Error> {
     let file = fs::File::open(txt_file)?;
     let mut instructions: Instructions = KeyedBag::new();
 
@@ -54,7 +67,8 @@ fn parse_instruction_file_at(txt_file: &PathBuf) -> Result<Instructions, Error> 
             Err(_) => bail!("bad index: {}", idx_string),
         };
 
-        instructions.insert(&idx, &PathBuf::from(&new_name));
+        let new_path = state.parent.join(PathBuf::from(&new_name));
+        instructions.insert(&idx, &new_path);
     }
 
     Ok(instructions)
@@ -96,7 +110,8 @@ fn run_editor_on(txt_file: &PathBuf) -> Result<(), Error> {
 fn create_instructions_file_at(path: &PathBuf, state: &DirState) -> Result<(), Error> {
     let mut file = dirops::open_for_user(path)?;
 
-    for (i, filename) in state.entries.iter().enumerate() {
+    for (i, filepath) in state.entries.iter().enumerate() {
+        let filename = dirops::file_name(filepath)?;
         writeln!(file, "{}\t{}", i, filename.display())?;
     }
 
@@ -106,7 +121,7 @@ fn create_instructions_file_at(path: &PathBuf, state: &DirState) -> Result<(), E
 /// Check whether "path" actually exists. If it does not, throw an error.
 fn ensure_paths_exists(path: &PathBuf) -> Result<(), Error> {
     if !path.exists() {
-        bail!("path does not exist: {:?}", path);
+        bail!("path does not exist: {}", path.display());
     }
 
     Ok(())
@@ -118,7 +133,7 @@ fn ensure_parent_matches(path: &PathBuf, expected_parent: &PathBuf) -> Result<()
     let path_parent = dirops::parent(path)?;
 
     if &path_parent != expected_parent {
-        bail!("directories not unique: {:?} and {:?}", expected_parent, path_parent);
+        bail!("directories not unique: {} and {}", expected_parent.display(), path_parent.display());
     }
 
     Ok(())
@@ -193,6 +208,10 @@ fn apply_deletes_from(instr: &Instructions, old: &DirState, ops: &Opt) -> Result
 
     for (i, filepath) in old.entries.iter().enumerate() {
         if instr.get(&i).is_none() {
+            if ops.verbose {
+                println!("{}: rm {:?}", argv0(), filepath);
+            }
+
             dirops::unlink(filepath, ops.recursive)?;
             ndeleted += 1;
         }
@@ -231,17 +250,31 @@ fn apply_copies_from(instr: &Instructions, old: &DirState, ops: &Opt) -> Result<
         // copying it.
         if new_file_names.len() == 1 {
             let new_file_name = first_from(new_file_names).unwrap();
+
+            if ops.verbose {
+                println!("{}: mv {:?} {:?}", argv0(), old_file_name, new_file_name);
+            }
+
             dirops::mv(&old_file_name, &new_file_name)?;
+
             continue;
         }
 
         // There are at least two new filenames. We have to copy.
         for new_file_name in &new_file_names {
+            if ops.verbose {
+                println!("{}: cp {:?} {:?}", argv0(), old_file_name, new_file_name);
+            }
+
             dirops::copy(&old_file_name, &new_file_name)?;
             ncopied += 1;
         }
 
         if !new_file_names.contains(old_file_name) {
+            if ops.verbose {
+                println!("{}: rm {:?}", argv0(), old_file_name);
+            }
+
             dirops::unlink(&old_file_name, ops.recursive)?;
         }
     }
@@ -249,34 +282,24 @@ fn apply_copies_from(instr: &Instructions, old: &DirState, ops: &Opt) -> Result<
     Ok(ncopied)
 }
 
-#[derive(Debug, StructOpt)]
-#[structopt(name = "vimdir")]
-struct Opt {
-    #[structopt(short, long, help = "Also remove directories recursively")]
-    recursive: bool,
-
-    #[structopt(name = "FILE", parse(from_os_str), help = "Files to edit")]
-    files: Vec<PathBuf>,
-}
-
 fn vimdir() -> Result<(), Error> {
     // Pull a list of all entries in the directory.
     let ops = Opt::from_args();
-    let entries: DirState = get_files(&ops)?;
+    let state: DirState = get_files(&ops)?;
 
     // Create the temporary directory and file that is to be edited.
     let script_dir = TempDir::new("vimdir")?;
     let script_path = script_dir.path().join("instructions.txt");
-    create_instructions_file_at(&script_path, &entries)?;
+    create_instructions_file_at(&script_path, &state)?;
 
     // Open file in editor, let user edit the file. If the user did not modify
     // the file, do not continue.
     run_editor_on(&script_path)?;
 
     // Load the instructions file. Apply them.
-    let instructions = parse_instruction_file_at(&script_path)?;
-    apply_deletes_from(&instructions, &entries, &ops)?;
-    apply_copies_from(&instructions, &entries, &ops)?;
+    let instructions = parse_instruction_file_at(&script_path, &state)?;
+    apply_deletes_from(&instructions, &state, &ops)?;
+    apply_copies_from(&instructions, &state, &ops)?;
 
     Ok(())
 }

@@ -9,7 +9,16 @@ use std::path::PathBuf;
 pub fn parent(path: &PathBuf) -> Result<PathBuf, Error> {
     match path.parent() {
         Some(parent_path) => Ok(parent_path.to_path_buf()),
-        None => bail!("no parent: {:?}", path),
+        None => bail!("no parent: {}", path.display()),
+    }
+}
+
+/// Return base file name. Throws an error if the name could not
+/// be determined.
+pub fn file_name(path: &PathBuf) -> Result<PathBuf, Error> {
+    match path.file_name() {
+        Some(parent_path) => Ok(PathBuf::from(parent_path)),
+        None => bail!("no file name: {:}", path.display()),
     }
 }
 
@@ -31,7 +40,7 @@ pub fn unlink(path: &PathBuf, recursive: bool) -> Result<(), Error> {
 
     if meta.is_dir() {
         if !recursive {
-            bail!("refusing to unlink: {:?}", path);
+            bail!("refusing to unlink: {}", path.display());
         }
         fs::remove_dir_all(path)?
     } else if meta.is_file() {

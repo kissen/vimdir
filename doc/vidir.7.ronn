@@ -30,6 +30,10 @@ Filenames to be edited may be given any combination of *directories*
 	by rm(1).
 
 
+* `-v`, `--verbose`:
+	Verbosely display the actions taken by the program.
+
+
 * `-h`, `--help`:
 	Print a short help explaining the individual flags and arguments.
 
