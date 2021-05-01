@@ -117,13 +117,45 @@ fn get_files_from_directory(dir: &PathBuf) -> Result<DirState, Error> {
     Ok(result)
 }
 
+fn ensure_paths_exists(path: &PathBuf) -> Result<(), Error> {
+    if !path.exists() {
+        bail!("path does not exist: {:?}", path);
+    }
+
+    Ok(())
+}
+
+fn ensure_parent_matches(path: &PathBuf, expected_parent: &PathBuf) -> Result<(), Error> {
+    let path_parent = match path.parent() {
+        Some(parent) => parent,
+        None => bail!("path has no parent: {:?}", path),
+    };
+
+    if path_parent != expected_parent {
+        bail!("directories not unique: {:?} and {:?}", expected_parent, path_parent);
+    }
+
+    Ok(())
+}
+
 /// Get a file listing containing each element in "paths". This function
 /// fails when any of the elements in "paths" do not exist.
 fn get_files_from_list(paths: &Vec<PathBuf>) -> Result<DirState, Error> {
+    // We require that all files have the same parent path. Doing
+    // things different gets confusing very quickly.
+
+    if paths.is_empty() {
+        bail!("no paths supplied");
+    }
+
+    let expected_parent = match paths.first().unwrap().parent() {
+        Some(path) => path.to_path_buf(),
+        None => bail!("path without parent"),
+    };
+
     for path in paths.iter() {
-        if !path.exists() {
-            bail!("path does not exist: {:?}", path);
-        }
+        ensure_paths_exists(&path)?;
+        ensure_parent_matches(&path, &expected_parent)?;
     }
 
     Ok(paths.clone())
