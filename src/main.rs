@@ -88,12 +88,12 @@ fn run_editor_on(txt_file: &PathBuf) -> Result<(), Error> {
 }
 
 /// Create the template instruction file, containing "entries". The
-/// file will be written to "script_path".
-fn create_instructions_file_at(script_path: &PathBuf, entries: &DirState) -> Result<(), Error> {
-    let mut script_file = fs::File::create(&script_path)?;
+/// file will be written to "path".
+fn create_instructions_file_at(path: &PathBuf, entries: &DirState) -> Result<(), Error> {
+    let mut file = dirops::open_for_user(path)?;
 
     for (i, filename) in entries.iter().enumerate() {
-        writeln!(script_file, "{}\t{}", i, filename.display())?;
+        writeln!(file, "{}\t{}", i, filename.display())?;
     }
 
     Ok(())

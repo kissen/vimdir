@@ -1,7 +1,17 @@
 use anyhow::{bail, Error};
 use fs_extra;
-use std::fs;
+use std::fs::{self, OpenOptions};
+use std::os::unix::fs::OpenOptionsExt;
 use std::path::PathBuf;
+
+pub fn open_for_user(path: &PathBuf) -> Result<fs::File, Error> {
+    let mut options = OpenOptions::new();
+    options.create(true);
+    options.write(true);
+    options.mode(0o600);
+
+    Ok(options.open(&path)?)
+}
 
 /// Delete file at path. If path is a directory, it is only deleted
 /// when recursive is set to true.
