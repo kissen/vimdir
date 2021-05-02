@@ -52,6 +52,9 @@ Filenames to be edited may be given any combination of *directories*
 	EDITOR
 		Editor to use.
 
+       VISUAL
+		Also supported to determine what editor to use.
+
 ## HISTORY
 
 vimdir(1) is a clone of the vidir(1) utility offered by the moreutils

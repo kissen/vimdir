@@ -74,20 +74,32 @@ fn parse_instruction_file_at(txt_file: &PathBuf, state: &DirState) -> Result<Ins
     Ok(instructions)
 }
 
+/// Get the name of the editor. We look at multiple environment variables
+/// to achieve this. If no variable is set, we fall back to "vi" which is
+/// installed on every reasonable system.
+fn get_editor_command() -> String {
+    let variables = vec![
+        "EDITOR", "VISUAL"
+    ];
+
+    for variable in variables {
+        if let Ok(editor) = env::var(variable) {
+            return editor;
+        }
+    }
+
+    return String::from("vi");
+}
+
 /// Spawn the default editor to edit file at "txt_file".
 fn run_editor_on(txt_file: &PathBuf) -> Result<(), Error> {
-    // Get the EDITOR environment variable.
-    let editor = env::var("EDITOR");
-    if !editor.is_ok() {
-        bail!("environment variable EDITOR not set");
-    };
-
     // EDITOR can be many things, e.g.
     //
     //  "emacsclient --create-frame",
     //
     // as such we need to split it up.
-    let components: Vec<String> = editor.unwrap().split(' ').map(String::from).collect();
+    let editor = get_editor_command();
+    let components: Vec<String> = editor.split(' ').map(String::from).collect();
     let executable = components.first().unwrap();
     let executable = OsStr::new(&executable);
 
