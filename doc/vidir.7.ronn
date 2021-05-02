@@ -22,7 +22,7 @@ Filenames to be edited may be given any combination of *directories*
 (which will be expanded to the non-recursive list of all files within
 *directory*).
 
-## OPTIONS
+## FLAGS
 
 * `-r`, `--recursive`:
 	Delete directories recursively. If not specified, deleting
