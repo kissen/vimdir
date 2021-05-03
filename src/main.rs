@@ -37,8 +37,7 @@ struct Opt {
 /// Return the first arg as passed to the program. Usually,
 /// this is the name of the executable.
 fn argv0() -> String {
-    let argv: Vec<String> = env::args().collect();
-    return argv.first().unwrap().clone();
+    env::args().next().unwrap()
 }
 
 /// Print error "what" to stderr.
