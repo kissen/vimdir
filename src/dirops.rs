@@ -85,17 +85,5 @@ pub fn mv(from: &PathBuf, to: &PathBuf) -> Result<(), Error> {
         return Ok(());
     }
 
-    let meta = fs::metadata(from)?;
-
-    if meta.is_dir() {
-        let config = fs_extra::dir::CopyOptions::new();
-        fs_extra::dir::move_dir(from, to, &config)?;
-    } else if meta.is_file() {
-        let config = fs_extra::file::CopyOptions::new();
-        fs_extra::file::move_file(from, to, &config)?;
-    } else {
-        bail!("bad file type");
-    }
-
-    Ok(())
+    Ok(fs::rename(from, to)?)
 }
