@@ -27,7 +27,11 @@ struct Opt {
     #[structopt(short, long, help = "Also remove directories recursively")]
     recursive: bool,
 
-    #[structopt(short, long, help = "Verbosely display the actions taken by the program")]
+    #[structopt(
+        short,
+        long,
+        help = "Verbosely display the actions taken by the program"
+    )]
     verbose: bool,
 
     #[structopt(name = "FILE", parse(from_os_str), help = "Files to edit")]
@@ -77,9 +81,7 @@ fn parse_instruction_file_at(txt_file: &PathBuf, state: &DirState) -> Result<Ins
 /// to achieve this. If no variable is set, we fall back to "vi" which is
 /// installed on every reasonable system.
 fn get_editor_command() -> String {
-    let variables = vec![
-        "EDITOR", "VISUAL"
-    ];
+    let variables = vec!["EDITOR", "VISUAL"];
 
     for variable in variables {
         if let Ok(editor) = env::var(variable) {
@@ -144,7 +146,11 @@ fn ensure_parent_matches(path: &PathBuf, expected_parent: &PathBuf) -> Result<()
     let path_parent = dirops::parent(path)?;
 
     if &path_parent != expected_parent {
-        bail!("directories not unique: {} and {}", expected_parent.display(), path_parent.display());
+        bail!(
+            "directories not unique: {} and {}",
+            expected_parent.display(),
+            path_parent.display()
+        );
     }
 
     Ok(())
