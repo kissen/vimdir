@@ -40,7 +40,7 @@ pub fn unlink(path: &PathBuf, recursive: bool) -> Result<(), Error> {
 
     if meta.is_dir() {
         if !recursive {
-            bail!("refusing to unlink: {}", path.display());
+            bail!("cowardly refusing to unlink, not in recursive mode: {}", path.display());
         }
         fs::remove_dir_all(path)?
     } else if meta.is_file() {
