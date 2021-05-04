@@ -206,16 +206,17 @@ fn get_files_from_list(paths: &Vec<PathBuf>) -> Result<DirState, Error> {
 
 /// Get the listing of files and directories to edit.
 fn get_files(ops: &Opt) -> Result<DirState, Error> {
-    if ops.files.is_empty() {
-        return get_files_from_working_directory();
-    }
-
-    if ops.files.len() == 1 {
+    let mut state: DirState = if ops.files.is_empty() {
+        get_files_from_working_directory()?
+    } else if ops.files.len() == 1 {
         let dir = &ops.files[0];
-        return get_files_from_directory(dir);
-    }
+        get_files_from_directory(dir)?
+    } else {
+        get_files_from_list(&ops.files)?
+    };
 
-    get_files_from_list(&ops.files)
+    state.entries.sort_unstable();
+    Ok(state)
 }
 
 /// Delete those files that previously were in "old" but are now
