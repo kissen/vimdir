@@ -2,6 +2,7 @@ mod dirops;
 mod keyedbag;
 
 use anyhow::{bail, Error};
+use git_version::git_version;
 use keyedbag::KeyedBag;
 use std::collections::HashSet;
 use std::env;
@@ -22,7 +23,7 @@ struct DirState {
 }
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "vimdir")]
+#[structopt(name = "vimdir", version=git_version!())]
 struct Opt {
     #[structopt(short, long, help = "Also remove directories recursively")]
     recursive: bool,
