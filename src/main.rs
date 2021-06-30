@@ -207,10 +207,6 @@ fn get_files_from_list(paths: &Vec<PathBuf>, ignore_hidden: bool) -> Result<DirS
         cleaned.push(path.clone());
     }
 
-    if cleaned.is_empty() {
-        bail!("no paths");
-    }
-
     let state = DirState {
         entries: cleaned,
         parent: expected_parent,
@@ -231,6 +227,10 @@ fn get_files(ops: &Opt) -> Result<DirState, Error> {
     } else {
         get_files_from_list(&ops.files, ignore_hidden)?
     };
+
+    if state.entries.is_empty() {
+        bail!("no files to edit");
+    }
 
     state.entries.sort_unstable();
     Ok(state)
