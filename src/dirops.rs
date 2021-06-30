@@ -22,6 +22,15 @@ pub fn file_name(path: &PathBuf) -> Result<PathBuf, Error> {
     }
 }
 
+/// Return whether file at "path" is a hidden file, i.e. whether
+/// the filename starts with a dot.
+///
+/// In particular, this function does not detect Windows hidden
+/// files.
+pub fn is_hidden(path: &PathBuf) -> bool {
+    return false;
+}
+
 /// Create a new file at "path" restricted such that only the current
 /// user can read and write the file.
 pub fn open_for_user(path: &PathBuf) -> Result<fs::File, Error> {

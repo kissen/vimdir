@@ -35,6 +35,9 @@ struct Opt {
     )]
     verbose: bool,
 
+    #[structopt(short, long, help = "Ignore hidden files")]
+    ignore_hidden_files: bool,
+
     #[structopt(name = "FILE", parse(from_os_str), help = "Files to edit")]
     files: Vec<PathBuf>,
 }
@@ -54,7 +57,6 @@ fn print_error(what: &Error) {
 fn parse_instruction_file_at(txt_file: &PathBuf, state: &DirState) -> Result<Instructions, Error> {
     let file = fs::File::open(txt_file)?;
     let mut instructions: Instructions = KeyedBag::new();
-
     for line in io::BufReader::new(file).lines() {
         let line = line?;
         let components: Vec<String> = line.splitn(2, "\t").map(String::from).collect();
@@ -158,18 +160,23 @@ fn ensure_parent_matches(path: &PathBuf, expected_parent: &PathBuf) -> Result<()
 }
 
 /// Get a file listing from the current working directory.
-fn get_files_from_working_directory() -> Result<DirState, Error> {
+fn get_files_from_working_directory(ignore_hidden: bool) -> Result<DirState, Error> {
     let dir = env::current_dir()?;
-    get_files_from_directory(&dir)
+    get_files_from_directory(&dir, ignore_hidden)
 }
 
 /// Get a file listing from directory "dir".
-fn get_files_from_directory(dir: &PathBuf) -> Result<DirState, Error> {
+fn get_files_from_directory(dir: &PathBuf, ignore_hidden: bool) -> Result<DirState, Error> {
     let mut result: Vec<PathBuf> = Vec::new();
 
     for entry in fs::read_dir(dir)? {
-        let entry = entry?;
-        result.push(entry.path())
+        let path = entry?.path();
+
+        if ignore_hidden && dirops::is_hidden(&path) {
+            continue;
+        }
+
+        result.push(path);
     }
 
     let state = DirState {
@@ -182,23 +189,30 @@ fn get_files_from_directory(dir: &PathBuf) -> Result<DirState, Error> {
 
 /// Get a file listing containing each element in "paths". This function
 /// fails when any of the elements in "paths" do not exist.
-fn get_files_from_list(paths: &Vec<PathBuf>) -> Result<DirState, Error> {
+fn get_files_from_list(paths: &Vec<PathBuf>, ignore_hidden: bool) -> Result<DirState, Error> {
     // We require that all files have the same parent path. Doing
-    // things different gets confusing very quickly.
-
-    if paths.is_empty() {
-        bail!("no paths supplied");
-    }
+    // things different gets confusing very quickly. Check that here.
 
     let expected_parent = dirops::parent(paths.first().unwrap())?;
+    let mut cleaned: Vec<PathBuf> = Vec::new();
 
     for path in paths.iter() {
         ensure_paths_exists(&path)?;
         ensure_parent_matches(&path, &expected_parent)?;
+
+        if ignore_hidden && dirops::is_hidden(&path) {
+            continue;
+        }
+
+        cleaned.push(path.clone());
+    }
+
+    if cleaned.is_empty() {
+        bail!("no paths");
     }
 
     let state = DirState {
-        entries: paths.clone(),
+        entries: cleaned,
         parent: expected_parent,
     };
 
@@ -207,13 +221,15 @@ fn get_files_from_list(paths: &Vec<PathBuf>) -> Result<DirState, Error> {
 
 /// Get the listing of files and directories to edit.
 fn get_files(ops: &Opt) -> Result<DirState, Error> {
+    let ignore_hidden = ops.ignore_hidden_files;
+
     let mut state: DirState = if ops.files.is_empty() {
-        get_files_from_working_directory()?
+        get_files_from_working_directory(ignore_hidden)?
     } else if ops.files.len() == 1 {
         let dir = &ops.files[0];
-        get_files_from_directory(dir)?
+        get_files_from_directory(dir, ignore_hidden)?
     } else {
-        get_files_from_list(&ops.files)?
+        get_files_from_list(&ops.files, ignore_hidden)?
     };
 
     state.entries.sort_unstable();
