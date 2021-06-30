@@ -18,10 +18,6 @@ directory, or edit filenames to rename files. You can also switch
 pairs of numbers to swap filenames. To duplicate files, copy a given
 line, keeping the number but changing the filename.
 
-Filenames to be edited may be given any combination of *directories*
-(which will be expanded to the non-recursive list of all files within
-*directory*).
-
 ## FLAGS
 
 * `-r`, `--recursive`:
