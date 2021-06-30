@@ -1,6 +1,7 @@
 use anyhow::{bail, Error};
 use fs_extra;
 use std::fs::{self, OpenOptions};
+use std::os::unix::ffi::OsStringExt;
 use std::os::unix::fs::OpenOptionsExt;
 use std::path::PathBuf;
 
@@ -28,7 +29,19 @@ pub fn file_name(path: &PathBuf) -> Result<PathBuf, Error> {
 /// In particular, this function does not detect Windows hidden
 /// files.
 pub fn is_hidden(path: &PathBuf) -> bool {
-    return false;
+    let name = match file_name(path) {
+        Ok(path_name) => path_name,
+        Err(_) => return false,
+    };
+
+    let bytes = name.into_os_string().into_vec();
+
+    if bytes.is_empty() {
+        return false;
+    }
+
+    let dot = '.' as u8;
+    return bytes[0] == dot;
 }
 
 /// Create a new file at "path" restricted such that only the current
