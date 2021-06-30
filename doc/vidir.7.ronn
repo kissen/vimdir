@@ -29,6 +29,9 @@ Filenames to be edited may be given any combination of *directories*
 	directories will not be possible. Similar to the -r flag as used
 	by rm(1).
 
+* `-i`, `--ignore-hidden-files`:
+	Ignore hidden files. With this flag set, filenames starting with
+	a dot will not show up in your text editor.
 
 * `-v`, `--verbose`:
 	Verbosely display the actions taken by the program.
@@ -46,6 +49,7 @@ Filenames to be edited may be given any combination of *directories*
 	vimdir
 	vimdir *.jpeg
 	vimdir --recursive ~/my/cool/docs
+	vimdir --ignore-hidden-files ~
 
 ## ENVIRONMENT VARIABLES
 
