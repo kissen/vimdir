@@ -52,7 +52,7 @@ line, keeping the number but changing the filename.
 	EDITOR
 		Editor to use.
 
-       VISUAL
+	VISUAL
 		Also supported to determine what editor to use.
 
 ## HISTORY
