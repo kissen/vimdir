@@ -26,7 +26,7 @@ Credit
 
 I am not a lawyer, but to be totally safe I consider this project a
 derivative work of the original vidir(1). In particular, parts of the
-documentation in /doc is copied from the moreutils project. As such
+documentation in /doc are copied from the moreutils project. As such
 this project is licensed under the GPL2 just like moreutils is.
 
 References
