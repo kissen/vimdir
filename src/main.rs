@@ -220,11 +220,20 @@ fn get_files(ops: &Opt) -> Result<DirState, Error> {
     let ignore_hidden = ops.ignore_hidden_files;
 
     let mut state: DirState = if ops.files.is_empty() {
+        // If we have no files supplied by the user, run vimdir
+        // on the current working directory.
         get_files_from_working_directory(ignore_hidden)?
-    } else if ops.files.len() == 1 {
-        let dir = &ops.files[0];
-        get_files_from_directory(dir, ignore_hidden)?
+    } else if ops.files.len() == 1 && ops.files.first().unwrap().is_dir() {
+        // Because we only have exactly one entry at it appears to
+        // be a directory, treat it as such. This does introduce a
+        // race condition as the check about and reading the dir
+        // in the call below are two separate actions. Oh no!
+        let name = &ops.files[0];
+        get_files_from_directory(name, ignore_hidden)?
     } else {
+        // We have some number of entries. At this point, we only
+        // support multiple files, not multiple (opened)
+        // directories.
         get_files_from_list(&ops.files, ignore_hidden)?
     };
 
