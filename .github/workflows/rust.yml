@@ -1,4 +1,4 @@
-name: Rust
+name: CompileAndTest
 
 on:
   push:
@@ -11,10 +11,10 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
-    - name: Build
+    - name: BuildDebug
       run: cargo build --verbose
+    - name: RunTests
+      run: cargo test --verbose
