@@ -16,7 +16,7 @@ pub struct KeyedBag<K: Keyed, V: Keyed> {
     /// Rust does not let me create static variables that take generic
     /// parameters (i.e. HashSet<V> *inside* method get). So this is the best I
     /// can come up with right now.
-    empty_set: HashSet<V>
+    empty_set: HashSet<V>,
 }
 
 impl<K: Keyed, V: Keyed> KeyedBag<K, V> {
