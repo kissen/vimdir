@@ -37,3 +37,14 @@ impl<K: Eq + Hash + Clone, V: Eq + Hash + Clone> KeyedBag<K, V> {
         self.map.keys().map(|e| e.clone()).collect()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::KeyedBag;
+
+    #[test]
+    fn constructing_empty_bag() {
+        let bag: KeyedBag<i32, i32> = KeyedBag::new();
+        assert_eq!(bag.keys().len(), 0);
+    }
+}
