@@ -1,6 +1,7 @@
 #![feature(trait_alias)]
 
 mod dirops;
+mod editor;
 mod keyedbag;
 mod vimdir;
 
