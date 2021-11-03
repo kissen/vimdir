@@ -50,11 +50,102 @@ impl<K: Keyed, V: Keyed> KeyedBag<K, V> {
 
 #[cfg(test)]
 mod tests {
-    use crate::KeyedBag;
+    use crate::keyedbag::KeyedBag;
+    use std::collections::HashSet;
+
+    fn count<T>(it: &mut dyn Iterator<Item = T>) -> usize {
+        it.map(|_| 1).sum()
+    }
 
     #[test]
     fn constructing_empty_bag() {
         let bag: KeyedBag<i32, i32> = KeyedBag::new();
-        assert_eq!(bag.keys().len(), 0);
+        assert!(bag.keys().next().is_none());
+        assert_eq!(count(&mut bag.keys()), 0);
+    }
+
+    #[test]
+    fn insert_single() {
+        let mut bag: KeyedBag<usize, usize> = KeyedBag::new();
+
+        let start: usize = 0;
+        let end: usize = 100;
+
+        for i in start..end {
+            bag.insert(i, i);
+            assert_eq!(count(&mut bag.keys()), i + 1);
+        }
+
+        for key in bag.keys() {
+            let values = bag.get(key);
+            assert_eq!(values.len(), 1);
+
+            let first = values.iter().next().unwrap();
+            assert_eq!(*first, *key);
+
+        }
+    }
+
+    #[test]
+    fn insert_multiple() {
+        let mut bag: KeyedBag<i32, i32> = KeyedBag::new();
+
+        bag.insert(1, 1);
+        bag.insert(1, 10);
+        bag.insert(1, 100);
+
+        bag.insert(2, 200);
+        bag.insert(2, 20);
+        bag.insert(2, 2);
+
+        bag.insert(3, 1);
+        bag.insert(3, 10);
+        bag.insert(3, 100);
+
+        bag.insert(4, 1);
+        bag.insert(4, 10);
+        bag.insert(4, 100);
+
+        assert_eq!(count(&mut bag.keys()), 4);
+
+        {
+            let mut expected_for_key_1: HashSet<i32> = HashSet::new();
+
+            expected_for_key_1.insert(1);
+            expected_for_key_1.insert(10);
+            expected_for_key_1.insert(100);
+
+            assert_eq!(&expected_for_key_1, bag.get(&1));
+        }
+
+        {
+            let mut expected_for_key_2: HashSet<i32> = HashSet::new();
+
+            expected_for_key_2.insert(200);
+            expected_for_key_2.insert(20);
+            expected_for_key_2.insert(2);
+
+            assert_eq!(&expected_for_key_2, bag.get(&2));
+        }
+
+        {
+            let mut expected_for_key_3: HashSet<i32> = HashSet::new();
+
+            expected_for_key_3.insert(100);
+            expected_for_key_3.insert(10);
+            expected_for_key_3.insert(1);
+
+            assert_eq!(&expected_for_key_3, bag.get(&3));
+        }
+
+        {
+            let mut expected_for_key_4: HashSet<i32> = HashSet::new();
+
+            expected_for_key_4.insert(100);
+            expected_for_key_4.insert(10);
+            expected_for_key_4.insert(1);
+
+            assert_eq!(&expected_for_key_4, bag.get(&4));
+        }
     }
 }
