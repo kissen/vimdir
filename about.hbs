@@ -1,0 +1,50 @@
+<html>
+
+<head>
+    <meta name="generator" content="cargo-about">
+    <meta charset="UTF-8">
+    <title>Third Party License Information for vimdir</title>
+</head>
+
+<body>
+    <div class="intro">
+        <h1>Third Party License Information for <code>vimdir</code></h1>
+        <ul>
+            <li>
+                This page lists the licenses of the code used in
+                <a href="https://github.com/kissen/vimdir"><code>vimdir</code></a> at time of release.
+                This page was generated with the delightful
+                <a href="https://github.com/EmbarkStudios/cargo-about"><code>cargo-about</code></a>
+                package.
+            </li>
+            <li>
+                In addition to the projects listed below, <code>vimdir</code> is
+                also a derivative work of <code>vidir</code> which is part of the
+                <a href="https://joeyh.name/code/moreutils/"><code>moreutils</code></a> package.
+                <code>moreutils</code> is released under the terms of the
+                <a href="https://www.gnu.org/licenses/old-licenses/gpl-2.0.html">GNU General Public License v2.0</a>.
+            </li>
+            <li>
+                The code for <code>vimdir</code> itself is released under the terms of the GNU General Public License v2.0.
+            </li>
+        </ul>
+    </div>
+
+    <h2>List of Rust Packages used in <code>vimdir</code></h2>
+    <ul class="licenses-list">
+        {{#each licenses}}
+        <li class="license">
+            <h3 id="{{id}}">{{name}}</h3>
+            <h4>Used by:</h4>
+            <ul class="license-used-by">
+                {{#each used_by}}
+                <li><a href="{{#if crate.repository}} {{crate.repository}} {{else}} https://crates.io/crates/{{crate.name}} {{/if}}">{{crate.name}} {{crate.version}}</a></li>
+                {{/each}}
+            </ul>
+            <pre class="license-text">{{text}}</pre>
+        </li>
+        {{/each}}
+    </ul>
+</body>
+
+</html>

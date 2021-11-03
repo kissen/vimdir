@@ -1,0 +1,20 @@
+accepted = [
+    "Apache-2.0",
+    "BSD-2-Clause",
+    "BSD-3-Clause",
+    "GPL-2.0",
+    "GPL-3.0",
+    "ISC",
+    "MIT",
+    "NOASSERTION",
+]
+
+targets = [
+    "x86_64-unknown-linux-gnu",
+    "x86_64-unknown-linux-musl",
+    "x86_64-pc-windows-msvc",
+    "x86_64-apple-darwin",
+]
+
+ignore-build-dependencies = true
+ignore-dev-dependencies = true
