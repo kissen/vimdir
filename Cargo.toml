@@ -1,8 +1,13 @@
 [package]
-name = "vimdir"
-version = "0.1.0"
 authors = ["Andreas Schärtl <andreas@schaertl.me>"]
+description = "Edit Directories in Your $EDITOR"
 edition = "2018"
+license = "GPL-2.0-only"
+license-file = "COPYING"
+name = "vimdir"
+readme = "README.txt"
+repository = "https://github.com/kissen/vimdir"
+version = "0.1.0"
 
 [dependencies]
 anyhow = "1.0.0"
