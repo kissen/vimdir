@@ -1,3 +1,5 @@
+#![feature(trait_alias)]
+
 mod dirops;
 mod keyedbag;
 
@@ -74,7 +76,7 @@ fn parse_instruction_file_at(txt_file: &PathBuf, state: &DirState) -> Result<Ins
         };
 
         let new_path = state.parent.join(PathBuf::from(&new_name));
-        instructions.insert(&idx, &new_path);
+        instructions.insert(idx, new_path);
     }
 
     Ok(instructions)
@@ -251,7 +253,7 @@ fn apply_deletes_from(instr: &Instructions, old: &DirState, ops: &Opt) -> Result
     let mut ndeleted: usize = 0;
 
     for (i, filepath) in old.entries.iter().enumerate() {
-        if instr.get(&i).is_none() {
+        if instr.get(&i).is_empty() {
             if ops.verbose {
                 println!("{}: rm {:?}", argv0(), filepath);
             }
@@ -268,7 +270,7 @@ fn apply_deletes_from(instr: &Instructions, old: &DirState, ops: &Opt) -> Result
 /// what value in set "set" you get has to considered random.
 /// This function is useful when "set" only contains one element
 /// and you want to get that one element.
-fn first_from<T>(set: HashSet<T>) -> Option<T> {
+fn first_from<T>(set: &HashSet<T>) -> Option<&T> {
     for elem in set {
         return Some(elem);
     }
@@ -281,8 +283,8 @@ fn apply_copies_from(instr: &Instructions, old: &DirState, ops: &Opt) -> Result<
     let mut ncopied: usize = 0;
 
     for key in instr.keys() {
-        let old_file_name = &old.entries[key];
-        let new_file_names = instr.get(&key).unwrap();
+        let old_file_name = &old.entries[*key];
+        let new_file_names = instr.get(&key);
 
         // If there is no new file name for the given old file, then the
         // file should be deleted (by another function).
@@ -305,7 +307,7 @@ fn apply_copies_from(instr: &Instructions, old: &DirState, ops: &Opt) -> Result<
         }
 
         // There are at least two new filenames. We have to copy.
-        for new_file_name in &new_file_names {
+        for new_file_name in new_file_names {
             if ops.verbose {
                 println!("{}: cp {:?} {:?}", argv0(), old_file_name, new_file_name);
             }
