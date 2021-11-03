@@ -12,7 +12,7 @@ text editor. If no *directory* is specified, the filenames of the
 current directory are edited.
 
 When editing a directory, each item in the directory will appear on
-its own numbered line.  These numbers are how vidir keeps track of
+its own numbered line.  These numbers are how vimdir keeps track of
 what items are changed. Delete lines to remove files from the
 directory, or edit filenames to rename files. You can also switch
 pairs of numbers to swap filenames. To duplicate files, copy a given
