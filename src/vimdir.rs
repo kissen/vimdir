@@ -12,6 +12,9 @@ use std::vec::Vec;
 use structopt::StructOpt;
 use tempdir::TempDir;
 
+#[allow(dead_code)]
+const VIMDIR_VERSION: &'static str = env!("CARGO_PKG_VERSION");
+
 type Instructions = KeyedBag<usize, PathBuf>;
 
 struct DirState {
@@ -20,7 +23,7 @@ struct DirState {
 }
 
 #[derive(Debug, StructOpt)]
-#[structopt(name = "vimdir", version=git_version!())]
+#[structopt(name = "vimdir", version=git_version!(fallback=VIMDIR_VERSION))]
 struct Opt {
     #[structopt(short, long, help = "Also remove directories recursively")]
     recursive: bool,
