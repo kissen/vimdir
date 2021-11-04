@@ -1,7 +1,9 @@
 [package]
 authors = ["Andreas Schärtl <andreas@schaertl.me>"]
+categories = ["command-line-utilities", "text-editors", "filesystem"]
 description = "Edit Directories in Your $EDITOR"
 edition = "2018"
+include = ["**/*.rs", "Cargo.toml", "README.txt", "doc/COPYING"]
 license = "GPL-2.0-only"
 name = "vimdir"
 readme = "README.txt"
