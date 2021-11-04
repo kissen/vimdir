@@ -2,12 +2,10 @@ use std::cmp::Eq;
 use std::collections::{HashMap, HashSet};
 use std::hash::Hash;
 
-pub trait Keyed = Eq + Hash;
-
 /// A HashMap where each key is associated with a set of values.
 /// Inserting different values for the same keys associates each
 /// unique value with the given key.
-pub struct KeyedBag<K: Keyed, V: Keyed> {
+pub struct KeyedBag<K: Eq + Hash, V: Eq + Hash> {
     /// The underlying container that matches key -> { value0, value1, ... }.
     container: HashMap<K, HashSet<V>>,
 
@@ -19,7 +17,7 @@ pub struct KeyedBag<K: Keyed, V: Keyed> {
     empty_set: HashSet<V>,
 }
 
-impl<K: Keyed, V: Keyed> KeyedBag<K, V> {
+impl<K: Eq + Hash, V: Eq + Hash> KeyedBag<K, V> {
     /// Create a new, empty KeyedBag.
     pub fn new() -> KeyedBag<K, V> {
         KeyedBag {
