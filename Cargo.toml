@@ -8,11 +8,11 @@ license = "GPL-2.0-only"
 name = "vimdir"
 readme = "README.txt"
 repository = "https://github.com/kissen/vimdir"
-version = "0.2.0"
+version = "0.3.0"
 
 [dependencies]
-anyhow = "1.0.0"
+anyhow = "1.0.59"
 fs_extra = "1.2.0"
 git-version = "0.3.4"
-structopt = { version = "0.3.21", default-features = false }
+structopt = { version = "0.3.26", default-features = false }
 tempdir = "0.3.7"
