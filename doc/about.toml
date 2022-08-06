@@ -7,6 +7,7 @@ accepted = [
     "ISC",
     "MIT",
     "NOASSERTION",
+    "Unicode-DFS-2016"
 ]
 
 targets = [
