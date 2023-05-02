@@ -18,7 +18,7 @@ pub fn parent(path: &PathBuf) -> Result<PathBuf, Error> {
 /// be determined.
 pub fn file_name(path: &PathBuf) -> Result<PathBuf, Error> {
     match path.file_name() {
-        Some(parent_path) => Ok(PathBuf::from(parent_path)),
+        Some(name) => Ok(PathBuf::from(name)),
         None => bail!("no file name: {:}", path.display()),
     }
 }
