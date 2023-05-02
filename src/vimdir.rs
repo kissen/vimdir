@@ -7,7 +7,7 @@ use std::collections::HashSet;
 use std::env;
 use std::fs;
 use std::io::{self, BufRead, Write};
-use std::path::PathBuf;
+use std::path::{PathBuf, MAIN_SEPARATOR};
 use std::vec::Vec;
 use structopt::StructOpt;
 use tempdir::TempDir;
@@ -82,7 +82,14 @@ fn create_instructions_file_at(path: &PathBuf, state: &DirState) -> Result<(), E
 
     for (i, filepath) in state.entries.iter().enumerate() {
         let filename = dirops::file_name(filepath)?;
-        writeln!(file, "{}\t{}", i, filename.display())?;
+
+        let suffix = if filepath.is_dir() {
+            String::from(MAIN_SEPARATOR)
+        } else {
+            String::new()
+        };
+
+        writeln!(file, "{}\t{}{}", i, filename.display(), suffix)?;
     }
 
     Ok(())
