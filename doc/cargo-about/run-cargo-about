@@ -1,0 +1,26 @@
+#! /bin/sh
+
+# Utility script that invokes cargo-about [1] to generate a file copying.txt
+# with all related licenses.
+#
+# [1] https://github.com/EmbarkStudios/cargo-about
+
+set -eu
+
+project_dir="$(git rev-parse --show-toplevel)"
+copying_file="$project_dir/target/copying.txt"
+
+(
+  cd "$project_dir"
+
+  # Copy the required files into the root directory. Our tooling expects it to
+  # be there.
+  cp "doc/cargo-about/about.toml" "./about.toml"
+  mkdir -p "target/"
+
+  # Generate the copying file.
+  cargo about generate "doc/cargo-about/about.hbs" > "$copying_file"
+  echo "$0: created $(realpath "$copying_file")" >&2
+)
+
+rm -f "$project_dir/about.toml"
